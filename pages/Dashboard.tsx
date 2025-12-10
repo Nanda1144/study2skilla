@@ -1,26 +1,60 @@
-import React from 'react';
-import { BookOpen, Target, Award, Clock, ArrowRight } from 'lucide-react';
+
+import React, { useState } from 'react';
+import { BookOpen, Target, Award, Clock, ArrowRight, Zap, Play } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { addXP } from '../services/storage';
 
 const Dashboard: React.FC = () => {
+  const { user, updateUser } = useAuth();
+  const [logging, setLogging] = useState(false);
+  
+  if (!user) return null;
+
+  const handleLogStudy = () => {
+    setLogging(true);
+    // Simulate API call
+    setTimeout(() => {
+        // Award 100 XP
+        const updatedUser = addXP(user, 100);
+        // Also update study hours
+        updatedUser.gamification.studyHoursTotal += 1;
+        updateUser(updatedUser);
+        setLogging(false);
+    }, 800);
+  };
+
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-700 rounded-2xl p-8 text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl"></div>
         <div className="relative z-10">
-          <h2 className="text-3xl font-bold mb-2">Welcome back, Alex!</h2>
-          <p className="text-indigo-100 max-w-xl">
-            You're on track with your Full Stack Development journey. You've completed 65% of your Semester 5 goals. 
-            Company demand for React & Node.js is up 12% this week.
-          </p>
+          <div className="flex justify-between items-start">
+            <div>
+                <h2 className="text-3xl font-bold mb-2">Welcome back, {user.name.split(' ')[0]}!</h2>
+                <p className="text-indigo-100 max-w-xl">
+                    You're Level {user.gamification?.level || 1} on your {user.domain} journey. 
+                    Keep up the streak of {user.gamification?.streakDays || 1} days!
+                </p>
+            </div>
+            <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl border border-white/20 text-center">
+                <p className="text-xs uppercase font-bold text-indigo-100">Current XP</p>
+                <p className="text-2xl font-bold">{user.gamification?.xp || 0}</p>
+            </div>
+          </div>
+          
           <div className="mt-6 flex space-x-3">
              <NavLink to="/roadmap" className="bg-white text-indigo-700 px-5 py-2 rounded-lg font-semibold hover:bg-indigo-50 transition shadow-lg">
                Continue Roadmap
              </NavLink>
-             <NavLink to="/interview" className="bg-indigo-800/50 backdrop-blur text-white border border-indigo-400/30 px-5 py-2 rounded-lg font-semibold hover:bg-indigo-800 transition">
-               Practice Interview
-             </NavLink>
+             <button 
+                onClick={handleLogStudy}
+                disabled={logging}
+                className="bg-emerald-500/20 backdrop-blur text-white border border-emerald-400/30 px-5 py-2 rounded-lg font-semibold hover:bg-emerald-500/30 transition flex items-center"
+             >
+               {logging ? 'Logging...' : <><Clock size={18} className="mr-2"/> Log Study Hour (+100 XP)</>}
+             </button>
           </div>
         </div>
       </div>
@@ -30,8 +64,8 @@ const Dashboard: React.FC = () => {
         {[
           { icon: <Target className="text-blue-400" />, label: 'Current Focus', value: 'System Design', sub: 'Semester 5' },
           { icon: <BookOpen className="text-emerald-400" />, label: 'Skills Mastered', value: '14 / 22', sub: 'On Track' },
-          { icon: <Clock className="text-amber-400" />, label: 'Study Hours', value: '32h', sub: 'This Week' },
-          { icon: <Award className="text-purple-400" />, label: 'Resume Score', value: '72/100', sub: 'Needs Improvement' },
+          { icon: <Clock className="text-amber-400" />, label: 'Total Study Hours', value: `${user.gamification?.studyHoursTotal || 0}h`, sub: 'All Time' },
+          { icon: <Award className="text-purple-400" />, label: 'Badges Earned', value: user.gamification?.badges?.length || 0, sub: 'Collection' },
         ].map((stat, idx) => (
           <div key={idx} className="bg-slate-900 border border-slate-800 p-5 rounded-xl hover:border-slate-700 transition">
             <div className="flex justify-between items-start mb-4">
@@ -47,22 +81,25 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recommended Actions */}
         <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-6">
-          <h3 className="text-lg font-semibold mb-4">Recommended Actions</h3>
+          <h3 className="text-lg font-semibold mb-4">Recommended Quests</h3>
           <div className="space-y-3">
             {[
-              { title: 'Complete "Advanced React Patterns"', type: 'Course', time: '2h remaining', priority: 'High', color: 'text-rose-400' },
-              { title: 'Mock Interview: Data Structures', type: 'Practice', time: '30m', priority: 'Medium', color: 'text-amber-400' },
-              { title: 'Update Resume with "GraphQL" Project', type: 'Profile', time: '15m', priority: 'Low', color: 'text-blue-400' },
+              { title: 'Complete "Advanced React Patterns"', type: 'Course', xp: '+250 XP', priority: 'High', color: 'text-rose-400' },
+              { title: 'Mock Interview: Data Structures', type: 'Practice', xp: '+150 XP', priority: 'Medium', color: 'text-amber-400' },
+              { title: 'Update Resume with "GraphQL" Project', type: 'Profile', xp: '+50 XP', priority: 'Low', color: 'text-blue-400' },
             ].map((task, i) => (
               <div key={i} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-800 hover:border-slate-700 transition group cursor-pointer">
                 <div className="flex items-center space-x-4">
                   <div className={`w-2 h-2 rounded-full ${task.priority === 'High' ? 'bg-rose-500' : task.priority === 'Medium' ? 'bg-amber-500' : 'bg-blue-500'}`}></div>
                   <div>
                     <h4 className="font-medium text-slate-200 group-hover:text-white">{task.title}</h4>
-                    <p className="text-xs text-slate-500">{task.type} • {task.time}</p>
+                    <p className="text-xs text-slate-500">{task.type}</p>
                   </div>
                 </div>
-                <ArrowRight size={18} className="text-slate-600 group-hover:text-indigo-400" />
+                <div className="flex items-center space-x-4">
+                    <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-1 rounded">{task.xp}</span>
+                    <ArrowRight size={18} className="text-slate-600 group-hover:text-indigo-400" />
+                </div>
               </div>
             ))}
           </div>

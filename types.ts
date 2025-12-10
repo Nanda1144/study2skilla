@@ -1,3 +1,4 @@
+
 export interface RoadmapItem {
   semester: number;
   focus: string;
@@ -44,6 +45,22 @@ export interface IndustryTrend {
   growth: number; // percentage
 }
 
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string; // Lucide icon name or emoji
+  dateEarned: string;
+}
+
+export interface UserGamification {
+  xp: number;
+  level: number;
+  badges: Badge[];
+  streakDays: number;
+  studyHoursTotal: number;
+}
+
 export interface UserProfile {
   id?: string;
   name: string;
@@ -53,6 +70,11 @@ export interface UserProfile {
   skills: string[];
   bio: string;
   email: string;
+  role?: 'student' | 'admin' | 'guest';
+  status?: 'active' | 'disabled';
+  gamification: UserGamification; // Added gamification stats
+  contactMethod?: 'email' | 'phone';
+  phone?: string;
 }
 
 export interface Mentor {
@@ -82,4 +104,17 @@ export interface Course {
   thumbnail?: string;
   rating?: number;
   duration?: string;
+}
+
+export interface AuthState {
+  user: UserProfile | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  activeUsers: number;
+  growth: number;
+  domainDistribution: { name: string; value: number }[];
 }

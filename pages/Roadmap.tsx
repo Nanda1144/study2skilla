@@ -1,18 +1,45 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { generateRoadmap } from '../services/geminiService';
 import { RoadmapData } from '../types';
-import { Loader2, CheckCircle, Circle, Book, Code, Layers } from 'lucide-react';
+import { Loader2, CheckCircle, Circle, Book, Code, Layers, Lock, Save } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { saveUserData, getUserData } from '../services/storage';
 
 const Roadmap: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [domain, setDomain] = useState('');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<RoadmapData | null>(null);
 
+  useEffect(() => {
+    // Load saved roadmap on mount
+    const saved = getUserData('roadmap');
+    if (saved) {
+      setData(saved);
+      if (saved.domain) setDomain(saved.domain);
+    }
+  }, []);
+
   const handleGenerate = async () => {
     if (!domain.trim()) return;
+    
+    // Guest Check
+    if (user?.role === 'guest') {
+        if (window.confirm("This is a premium feature. Please sign up to generate personalized roadmaps.\n\nCreate an account now?")) {
+            navigate('/auth');
+        }
+        return;
+    }
+
     setLoading(true);
     const result = await generateRoadmap(domain);
     setData(result);
+    if (result) {
+      saveUserData('roadmap', result);
+    }
     setLoading(false);
   };
 
@@ -26,6 +53,11 @@ const Roadmap: React.FC = () => {
       <div className="mb-8">
         <h2 className="text-3xl font-bold mb-2">AI Roadmap Generator</h2>
         <p className="text-slate-400">Generate a personalized 8-semester learning path tailored to your engineering goals.</p>
+        {user?.role === 'guest' && (
+            <div className="mt-4 bg-indigo-900/30 border border-indigo-500/30 p-3 rounded-lg flex items-center text-sm text-indigo-300">
+                <Lock size={16} className="mr-2"/> Demo Mode: Sign up to generate custom roadmaps.
+            </div>
+        )}
       </div>
 
       {!data && !loading && (
@@ -80,9 +112,14 @@ const Roadmap: React.FC = () => {
                <h3 className="text-xl font-bold text-white">{data.domain} Roadmap</h3>
                <p className="text-sm text-slate-400">8 Semesters • Customized by AI</p>
              </div>
-             <button onClick={() => setData(null)} className="text-sm text-slate-400 hover:text-white underline">
-               Create New
-             </button>
+             <div className="flex items-center space-x-4">
+                 <span className="flex items-center text-xs text-emerald-400">
+                    <Save size={14} className="mr-1"/> Auto-Saved
+                 </span>
+                 <button onClick={() => setData(null)} className="text-sm text-slate-400 hover:text-white underline">
+                   Create New
+                 </button>
+             </div>
            </div>
 
            <div className="relative border-l-2 border-indigo-900/50 ml-4 md:ml-8 space-y-12 pb-12">

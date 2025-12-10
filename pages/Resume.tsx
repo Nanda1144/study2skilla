@@ -26,7 +26,14 @@ const Resume: React.FC = () => {
     domain: "Full Stack Development",
     skills: ["React", "Node.js", "MongoDB", "Tailwind CSS"],
     bio: "Passionate developer looking for internships.",
-    email: "alex@example.com"
+    email: "alex@example.com",
+    gamification: {
+      xp: 0,
+      level: 1,
+      badges: [],
+      streakDays: 0,
+      studyHoursTotal: 0
+    }
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
