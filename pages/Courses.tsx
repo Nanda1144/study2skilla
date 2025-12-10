@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Course, RoadmapData } from '../types';
 import { PlayCircle, Award, ExternalLink, Youtube, MonitorPlay, BookOpen, Map, X, PlusCircle, CheckCircle, CheckSquare, Square } from 'lucide-react';
@@ -98,9 +97,9 @@ const Courses: React.FC = () => {
   const filteredCourses = filter === 'All' ? courses : courses.filter(c => c.type === filter);
 
   const getRoadmapMatch = (course: Course) => {
-      if (!roadmap) return null;
+      if (!roadmap || !roadmap.roadmap) return null;
       for (const sem of roadmap.roadmap) {
-          const match = sem.resources.find(r => 
+          const match = sem.resources?.find(r => 
               r.toLowerCase().includes(course.title.toLowerCase()) || 
               course.title.toLowerCase().includes(r.toLowerCase())
           );
@@ -143,7 +142,7 @@ const Courses: React.FC = () => {
 
   const openAddModal = (e: React.MouseEvent, course: Course) => {
       e.stopPropagation();
-      if (!roadmap) {
+      if (!roadmap || !roadmap.roadmap) {
           if(window.confirm("You don't have a roadmap yet. Would you like to generate one first?")) {
               navigate('/roadmap');
           }
@@ -154,7 +153,7 @@ const Courses: React.FC = () => {
   };
 
   const confirmAddToRoadmap = () => {
-      if (!roadmap || !courseToAdd) return;
+      if (!roadmap || !roadmap.roadmap || !courseToAdd) return;
 
       const updatedRoadmap = { ...roadmap };
       // Find the semester
@@ -163,6 +162,9 @@ const Courses: React.FC = () => {
       if (semesterIndex !== -1) {
           // Add to resources if not already there
           const resourceEntry = `${courseToAdd.title} (${courseToAdd.platform})`;
+          if (!updatedRoadmap.roadmap[semesterIndex].resources) {
+              updatedRoadmap.roadmap[semesterIndex].resources = [];
+          }
           if (!updatedRoadmap.roadmap[semesterIndex].resources.includes(resourceEntry)) {
              updatedRoadmap.roadmap[semesterIndex].resources.push(resourceEntry);
           }
@@ -372,7 +374,7 @@ const Courses: React.FC = () => {
                         onChange={(e) => setSelectedSemester(parseInt(e.target.value))}
                         className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-indigo-500 focus:outline-none"
                       >
-                          {roadmap?.roadmap.map(sem => (
+                          {roadmap?.roadmap?.map(sem => (
                               <option key={sem.semester} value={sem.semester}>
                                   Semester {sem.semester}: {sem.focus}
                               </option>

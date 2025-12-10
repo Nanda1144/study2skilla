@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { generateRoadmap } from '../services/geminiService';
 import { RoadmapData } from '../types';
@@ -123,7 +122,7 @@ const Roadmap: React.FC = () => {
            </div>
 
            <div className="relative border-l-2 border-indigo-900/50 ml-4 md:ml-8 space-y-12 pb-12">
-             {data.roadmap.map((sem, idx) => (
+             {data.roadmap?.map((sem, idx) => (
                <div key={idx} className="relative pl-8 md:pl-12">
                  {/* Timeline Dot */}
                  <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-900 border-2 border-indigo-500 flex items-center justify-center">
@@ -144,7 +143,7 @@ const Roadmap: React.FC = () => {
                          <Layers size={16} className="mr-2 text-blue-400" /> Key Skills
                        </div>
                        <ul className="space-y-1">
-                         {sem.skills.map((skill, i) => (
+                         {sem.skills?.map((skill, i) => (
                            <li key={i} className="text-sm text-slate-400 flex items-start">
                              <span className="mr-2 text-slate-600">•</span> {skill}
                            </li>
@@ -157,7 +156,7 @@ const Roadmap: React.FC = () => {
                          <Code size={16} className="mr-2 text-emerald-400" /> Projects
                        </div>
                        <ul className="space-y-1">
-                         {sem.projects.map((proj, i) => (
+                         {sem.projects?.map((proj, i) => (
                            <li key={i} className="text-sm text-slate-400 flex items-start">
                              <span className="mr-2 text-slate-600">•</span> {proj}
                            </li>
@@ -170,7 +169,7 @@ const Roadmap: React.FC = () => {
                          <Book size={16} className="mr-2 text-amber-400" /> Resources
                        </div>
                        <ul className="space-y-1">
-                         {sem.resources.map((res, i) => (
+                         {sem.resources?.map((res, i) => (
                            <li key={i} className="text-sm text-slate-400 flex items-start">
                              <span className="mr-2 text-slate-600">•</span> {res}
                            </li>

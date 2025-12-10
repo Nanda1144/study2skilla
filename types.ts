@@ -45,6 +45,11 @@ export interface IndustryTrend {
   growth: number; // percentage
 }
 
+export interface InsightsResponse {
+  trends: IndustryTrend[];
+  sources: { title: string; uri: string }[];
+}
+
 export interface Badge {
   id: string;
   name: string;
@@ -75,6 +80,7 @@ export interface UserProfile {
   gamification: UserGamification; // Added gamification stats
   contactMethod?: 'email' | 'phone';
   phone?: string;
+  avatarUrl?: string; // Added for profile picture
 }
 
 export interface Mentor {
@@ -92,6 +98,8 @@ export interface JobAutomation {
   company: string;
   status: 'Scanning' | 'Tailoring Resume' | 'Genering Cover Letter' | 'Emailing' | 'Applied';
   matchScore: number;
+  coverLetter?: string; // Added to store AI generated cover letter
+  tailoredSummary?: string; // Added to store AI tailored resume summary
 }
 
 export interface Course {

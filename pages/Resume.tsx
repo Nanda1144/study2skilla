@@ -202,7 +202,7 @@ const Resume: React.FC = () => {
                     <Check size={18} className="mr-2" /> Strengths
                   </h4>
                   <div className="flex flex-wrap gap-2">
-                    {analysis.strengths.map((s, i) => (
+                    {analysis.strengths?.map((s, i) => (
                       <span key={i} className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-sm rounded-full border border-emerald-500/20">
                         {s}
                       </span>
@@ -215,7 +215,7 @@ const Resume: React.FC = () => {
                     <AlertTriangle size={18} className="mr-2" /> Missing Skills
                   </h4>
                   <div className="flex flex-wrap gap-2">
-                    {analysis.missingSkills.map((s, i) => (
+                    {analysis.missingSkills?.map((s, i) => (
                       <span key={i} className="px-3 py-1 bg-rose-500/10 text-rose-400 text-sm rounded-full border border-rose-500/20">
                         {s}
                       </span>
@@ -228,7 +228,7 @@ const Resume: React.FC = () => {
                     <TrendingUp size={18} className="mr-2" /> AI Improvement Plan
                   </h4>
                   <ul className="space-y-3">
-                    {analysis.improvementPlan.map((step, i) => (
+                    {analysis.improvementPlan?.map((step, i) => (
                       <li key={i} className="flex items-start text-slate-300 text-sm bg-slate-950 p-3 rounded-lg border border-slate-800/50">
                         <span className="bg-indigo-900 text-indigo-300 w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 mr-3 mt-0.5">
                           {i + 1}

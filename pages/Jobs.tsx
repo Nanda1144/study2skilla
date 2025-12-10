@@ -1,8 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { JobAutomation } from '../types';
-import { Play, Pause, CheckCircle, Mail, FileText, Loader2, Send } from 'lucide-react';
+import { Play, Pause, CheckCircle, Mail, FileText, Loader2, Send, Eye, X } from 'lucide-react';
+import { generateJobApplication } from '../services/geminiService';
+import { useAuth } from '../context/AuthContext';
 
 const Jobs: React.FC = () => {
+  const { user } = useAuth();
   const [isAutomating, setIsAutomating] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [jobs, setJobs] = useState<JobAutomation[]>([
@@ -10,27 +14,85 @@ const Jobs: React.FC = () => {
     { id: '2', role: 'React Developer', company: 'BuildFast', status: 'Scanning', matchScore: 88 },
     { id: '3', role: 'Jr. Software Engineer', company: 'InnovateCorp', status: 'Scanning', matchScore: 75 },
   ]);
+  
+  const [selectedJob, setSelectedJob] = useState<JobAutomation | null>(null);
 
   useEffect(() => {
-    let interval: any;
-    if (isAutomating) {
-      interval = setInterval(() => {
-        setJobs(prev => prev.map(job => {
-          if (job.status === 'Scanning') return { ...job, status: 'Tailoring Resume' };
-          if (job.status === 'Tailoring Resume') return { ...job, status: 'Genering Cover Letter' };
-          if (job.status === 'Genering Cover Letter') return { ...job, status: 'Emailing' };
-          if (job.status === 'Emailing') return { ...job, status: 'Applied' };
-          return job;
-        }));
-        
-        const actions = ["Found new listing at startup...", "Analyzing keywords...", "Generating custom cover letter...", "Sending email to hr@company.com..."];
-        const randomAction = actions[Math.floor(Math.random() * actions.length)];
-        setLogs(prev => [randomAction, ...prev].slice(0, 10));
+    let timeout: NodeJS.Timeout;
 
-      }, 3000);
+    const processJobs = async () => {
+       if (!isAutomating || !user) return;
+
+       // Find first job that isn't Applied
+       const jobIndex = jobs.findIndex(j => j.status !== 'Applied');
+       if (jobIndex === -1) {
+           setIsAutomating(false);
+           setLogs(prev => ["All jobs applied!", ...prev]);
+           return;
+       }
+
+       const job = jobs[jobIndex];
+       
+       // State Machine
+       if (job.status === 'Scanning') {
+           setLogs(prev => [`Scanning job: ${job.role} at ${job.company}...`, ...prev]);
+           await new Promise(r => setTimeout(r, 1500));
+           
+           setJobs(prev => {
+               const newJobs = [...prev];
+               newJobs[jobIndex].status = 'Tailoring Resume';
+               return newJobs;
+           });
+       } 
+       else if (job.status === 'Tailoring Resume') {
+           setLogs(prev => [`AI tailoring resume for ${job.company}...`, ...prev]);
+           // Simulate processing time
+           await new Promise(r => setTimeout(r, 1500));
+           
+           setJobs(prev => {
+               const newJobs = [...prev];
+               newJobs[jobIndex].status = 'Genering Cover Letter';
+               return newJobs;
+           });
+       }
+       else if (job.status === 'Genering Cover Letter') {
+           setLogs(prev => [`Generating custom cover letter for ${job.role}...`, ...prev]);
+           
+           // Real AI Call
+           const aiResult = await generateJobApplication(user, job.role, job.company);
+           
+           setJobs(prev => {
+               const newJobs = [...prev];
+               newJobs[jobIndex].status = 'Emailing';
+               if (aiResult) {
+                  newJobs[jobIndex].coverLetter = aiResult.coverLetter;
+                  newJobs[jobIndex].tailoredSummary = aiResult.tailoredSummary;
+               }
+               return newJobs;
+           });
+       }
+       else if (job.status === 'Emailing') {
+           setLogs(prev => [`Sending application to ${job.company} HR...`, ...prev]);
+           await new Promise(r => setTimeout(r, 1000));
+           
+           setJobs(prev => {
+               const newJobs = [...prev];
+               newJobs[jobIndex].status = 'Applied';
+               return newJobs;
+           });
+           setLogs(prev => [`Successfully applied to ${job.company}!`, ...prev]);
+       }
+
+       // Loop
+       timeout = setTimeout(processJobs, 1000);
+    };
+
+    if (isAutomating) {
+        processJobs();
     }
-    return () => clearInterval(interval);
-  }, [isAutomating]);
+
+    return () => clearTimeout(timeout);
+  }, [isAutomating, jobs, user]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -72,6 +134,15 @@ const Jobs: React.FC = () => {
                                 </span>
                                 <span className="text-xs text-slate-500">{job.matchScore}% Match</span>
                             </div>
+                            {job.coverLetter && (
+                                <button 
+                                  onClick={() => setSelectedJob(job)}
+                                  className="text-slate-400 hover:text-white"
+                                  title="View Generated Application"
+                                >
+                                    <Eye size={18} />
+                                </button>
+                            )}
                         </div>
                     </div>
                 ))}
@@ -82,29 +153,51 @@ const Jobs: React.FC = () => {
       <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col font-mono text-sm">
           <div className="border-b border-slate-800 pb-2 mb-2 font-bold text-slate-400 flex justify-between">
               <span>LIVE LOGS</span>
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              {isAutomating && <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>}
           </div>
-          <div className="flex-1 overflow-y-auto space-y-2 opacity-80">
+          <div className="flex-1 overflow-y-auto space-y-2 opacity-80 custom-scrollbar">
               {logs.map((log, i) => (
                   <div key={i} className="text-emerald-500/80">
                       <span className="text-slate-600 mr-2">[{new Date().toLocaleTimeString()}]</span>
                       {log}
                   </div>
               ))}
-              {!isAutomating && <div className="text-slate-600 italic">Waiting to start...</div>}
+              {!isAutomating && logs.length === 0 && <div className="text-slate-600 italic">Waiting to start...</div>}
           </div>
           
           <div className="mt-4 pt-4 border-t border-slate-800">
               <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
                   <span>EMAILS SENT</span>
-                  <span className="text-white font-bold text-lg">142</span>
-              </div>
-              <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>INTERVIEWS BOOKED</span>
-                  <span className="text-white font-bold text-lg">3</span>
+                  <span className="text-white font-bold text-lg">{jobs.filter(j => j.status === 'Applied').length}</span>
               </div>
           </div>
       </div>
+
+      {/* Generated Content Modal */}
+      {selectedJob && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+              <div className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+                  <div className="p-4 border-b border-slate-800 flex justify-between items-center">
+                      <h3 className="font-bold text-white">Application: {selectedJob.role}</h3>
+                      <button onClick={() => setSelectedJob(null)} className="text-slate-400 hover:text-white"><X size={20}/></button>
+                  </div>
+                  <div className="p-6 overflow-y-auto custom-scrollbar">
+                      <div className="mb-6">
+                          <h4 className="text-indigo-400 font-semibold mb-2">Tailored Resume Summary</h4>
+                          <div className="bg-slate-800 p-3 rounded-lg text-sm text-slate-300 italic">
+                              "{selectedJob.tailoredSummary}"
+                          </div>
+                      </div>
+                      <div>
+                          <h4 className="text-emerald-400 font-semibold mb-2">Generated Cover Letter</h4>
+                          <div className="bg-white text-slate-900 p-6 rounded-lg text-sm whitespace-pre-wrap font-serif leading-relaxed">
+                              {selectedJob.coverLetter}
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 };

@@ -2,17 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { getMarketInsights } from '../services/geminiService';
 import { IndustryTrend } from '../types';
-import { Loader2, TrendingUp, Briefcase } from 'lucide-react';
+import { Loader2, TrendingUp, Briefcase, ExternalLink, Globe } from 'lucide-react';
 
 const Insights: React.FC = () => {
   const [domain, setDomain] = useState('Full Stack Development');
   const [data, setData] = useState<IndustryTrend[]>([]);
+  const [sources, setSources] = useState<{ title: string; uri: string }[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
     const result = await getMarketInsights(domain);
-    setData(result);
+    // Ensure we are setting an array
+    setData(Array.isArray(result.trends) ? result.trends : []);
+    setSources(result.sources || []);
     setLoading(false);
   };
 
@@ -22,7 +25,7 @@ const Insights: React.FC = () => {
   }, []);
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="space-y-8 max-w-6xl mx-auto pb-10">
       <div>
         <h2 className="text-3xl font-bold mb-2">Market Insights</h2>
         <p className="text-slate-400">Real-time AI analysis of skill demand and industry growth.</p>
@@ -48,7 +51,7 @@ const Insights: React.FC = () => {
       {loading ? (
         <div className="h-64 flex flex-col items-center justify-center">
             <Loader2 className="animate-spin text-indigo-500 mb-4" size={32} />
-            <p className="text-slate-500">Scanning job markets & tech blogs...</p>
+            <p className="text-slate-500">Scanning job markets & tech blogs via Google Search...</p>
         </div>
       ) : (
         <>
@@ -69,7 +72,7 @@ const Insights: React.FC = () => {
                                     cursor={{fill: '#334155', opacity: 0.4}}
                                 />
                                 <Bar dataKey="demand" radius={[0, 4, 4, 0]} barSize={20}>
-                                    {data.map((entry, index) => (
+                                    {data?.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#6366f1' : '#818cf8'} />
                                     ))}
                                 </Bar>
@@ -83,7 +86,7 @@ const Insights: React.FC = () => {
                         <Briefcase size={20} className="mr-2 text-emerald-400"/> YoY Growth Projections
                     </h3>
                     <div className="space-y-4">
-                        {data.map((item, idx) => (
+                        {data?.map((item, idx) => (
                             <div key={idx} className="flex items-center justify-between">
                                 <span className="text-slate-300 font-medium">{item.name}</span>
                                 <div className="flex items-center">
@@ -101,24 +104,31 @@ const Insights: React.FC = () => {
                 </div>
             </div>
 
-            {/* Static Insights Component for MVP */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                 <div className="bg-gradient-to-br from-slate-900 to-slate-900 border border-slate-800 p-6 rounded-xl">
-                     <p className="text-slate-500 text-xs uppercase font-bold mb-2">Highest Paying Role</p>
-                     <h4 className="text-xl font-bold text-white">Solutions Architect</h4>
-                     <p className="text-emerald-400 mt-2 text-sm">Avg. $145k/yr</p>
-                 </div>
-                 <div className="bg-gradient-to-br from-slate-900 to-slate-900 border border-slate-800 p-6 rounded-xl">
-                     <p className="text-slate-500 text-xs uppercase font-bold mb-2">Emerging Sector</p>
-                     <h4 className="text-xl font-bold text-white">Edge AI</h4>
-                     <p className="text-indigo-400 mt-2 text-sm">Hardware + ML</p>
-                 </div>
-                 <div className="bg-gradient-to-br from-slate-900 to-slate-900 border border-slate-800 p-6 rounded-xl">
-                     <p className="text-slate-500 text-xs uppercase font-bold mb-2">Recruiter Activity</p>
-                     <h4 className="text-xl font-bold text-white">Very High</h4>
-                     <p className="text-amber-400 mt-2 text-sm">Q3 Hiring Surge</p>
-                 </div>
-            </div>
+            {/* Grounding Sources */}
+            {sources && sources.length > 0 && (
+                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center text-slate-300">
+                        <Globe size={18} className="mr-2 text-blue-400"/> Sources Verified by Google Search
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {sources.map((source, i) => (
+                            <a 
+                                key={i} 
+                                href={source.uri} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center p-3 rounded-lg bg-slate-950 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-900 transition group"
+                            >
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-slate-300 truncate group-hover:text-indigo-400">{source.title}</p>
+                                    <p className="text-xs text-slate-500 truncate">{source.uri}</p>
+                                </div>
+                                <ExternalLink size={14} className="text-slate-600 group-hover:text-indigo-500 ml-2" />
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            )}
         </>
       )}
     </div>
