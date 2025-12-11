@@ -100,6 +100,8 @@ export interface JobAutomation {
   matchScore: number;
   coverLetter?: string; // Added to store AI generated cover letter
   tailoredSummary?: string; // Added to store AI tailored resume summary
+  feedbackRating?: number; // 1-5 stars
+  feedbackComment?: string;
 }
 
 export interface Course {

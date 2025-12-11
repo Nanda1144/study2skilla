@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { JobAutomation } from '../types';
-import { Play, Pause, CheckCircle, Mail, FileText, Loader2, Send, Eye, X } from 'lucide-react';
+import { Play, Pause, CheckCircle, Mail, FileText, Loader2, Send, Eye, X, Star } from 'lucide-react';
 import { generateJobApplication } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
 
@@ -16,9 +16,14 @@ const Jobs: React.FC = () => {
   ]);
   
   const [selectedJob, setSelectedJob] = useState<JobAutomation | null>(null);
+  
+  // Feedback Modal State
+  const [feedbackJob, setFeedbackJob] = useState<JobAutomation | null>(null);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout>;
 
     const processJobs = async () => {
        if (!isAutomating || !user) return;
@@ -94,6 +99,23 @@ const Jobs: React.FC = () => {
     return () => clearTimeout(timeout);
   }, [isAutomating, jobs, user]);
 
+  const handleOpenFeedback = (job: JobAutomation) => {
+    setFeedbackJob(job);
+    setRating(job.feedbackRating || 0);
+    setComment(job.feedbackComment || '');
+  };
+
+  const submitFeedback = () => {
+    if (!feedbackJob) return;
+    setJobs(prev => prev.map(j => 
+        j.id === feedbackJob.id 
+        ? { ...j, feedbackRating: rating, feedbackComment: comment } 
+        : j
+    ));
+    setFeedbackJob(null);
+    alert("Feedback submitted! This helps us improve our AI models.");
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
         case 'Applied': return 'text-emerald-400';
@@ -125,6 +147,11 @@ const Jobs: React.FC = () => {
                         <div>
                             <h4 className="font-bold text-white">{job.role}</h4>
                             <p className="text-sm text-slate-400">{job.company}</p>
+                            {job.feedbackRating && (
+                                <div className="flex mt-1 text-amber-400 text-xs">
+                                    {[...Array(job.feedbackRating)].map((_, i) => <Star key={i} size={10} fill="currentColor" />)}
+                                </div>
+                            )}
                         </div>
                         <div className="flex items-center space-x-4">
                             <div className="flex flex-col items-end">
@@ -135,13 +162,24 @@ const Jobs: React.FC = () => {
                                 <span className="text-xs text-slate-500">{job.matchScore}% Match</span>
                             </div>
                             {job.coverLetter && (
-                                <button 
-                                  onClick={() => setSelectedJob(job)}
-                                  className="text-slate-400 hover:text-white"
-                                  title="View Generated Application"
-                                >
-                                    <Eye size={18} />
-                                </button>
+                                <div className="flex space-x-2">
+                                    <button 
+                                        onClick={() => setSelectedJob(job)}
+                                        className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-700"
+                                        title="View Generated Application"
+                                    >
+                                        <Eye size={18} />
+                                    </button>
+                                    {job.status === 'Applied' && (
+                                        <button 
+                                            onClick={() => handleOpenFeedback(job)}
+                                            className="text-amber-400 hover:text-amber-300 p-2 rounded-lg hover:bg-slate-700"
+                                            title="Rate AI Quality"
+                                        >
+                                            <Star size={18} />
+                                        </button>
+                                    )}
+                                </div>
                             )}
                         </div>
                     </div>
@@ -197,6 +235,46 @@ const Jobs: React.FC = () => {
                   </div>
               </div>
           </div>
+      )}
+
+      {/* Feedback Modal */}
+      {feedbackJob && (
+           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+              <div className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-md shadow-2xl p-6">
+                  <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-bold text-white">Rate AI Quality</h3>
+                      <button onClick={() => setFeedbackJob(null)} className="text-slate-400 hover:text-white"><X size={20}/></button>
+                  </div>
+                  
+                  <p className="text-slate-400 text-sm mb-4">How well did the AI tailor your application for <strong>{feedbackJob.company}</strong>?</p>
+                  
+                  <div className="flex justify-center space-x-2 mb-6">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                          <button 
+                            key={star} 
+                            onClick={() => setRating(star)}
+                            className={`p-1 transition ${rating >= star ? 'text-amber-400 scale-110' : 'text-slate-600 hover:text-amber-200'}`}
+                          >
+                              <Star size={32} fill={rating >= star ? "currentColor" : "none"} />
+                          </button>
+                      ))}
+                  </div>
+
+                  <textarea 
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      placeholder="Any specific feedback on the cover letter or summary?"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-indigo-500 h-24 resize-none mb-4"
+                  />
+
+                  <button 
+                    onClick={submitFeedback}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-bold"
+                  >
+                      Submit Feedback
+                  </button>
+              </div>
+           </div>
       )}
     </div>
   );

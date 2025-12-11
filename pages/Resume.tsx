@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { analyzeResume, generateResumeContent } from '../services/geminiService';
 import { ResumeAnalysis, UserProfile } from '../types';
 import { getCurrentUser } from '../services/storage';
-import { FileText, Loader2, Check, AlertTriangle, TrendingUp, Upload, PenTool, Download, Sparkles } from 'lucide-react';
+import { FileText, Loader2, Check, AlertTriangle, TrendingUp, Upload, PenTool, Download, Sparkles, Copy, Share2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Resume: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'analyze' | 'build'>('analyze');
@@ -94,6 +95,21 @@ const Resume: React.FC = () => {
     alert("Resume downloaded as a Markdown file!\n\nYou can now open this file in any text editor to customize, add personal details, or tweak the formatting exactly how you like it.");
   };
 
+  const handleCopyToClipboard = () => {
+    if (!generatedResume) return;
+    navigator.clipboard.writeText(generatedResume);
+    alert("Resume content copied to clipboard!");
+  };
+
+  const handleShareResume = () => {
+     if (!generatedResume) return;
+     // Simulate unique link generation
+     const uniqueId = Math.random().toString(36).substring(7);
+     const shareUrl = `${window.location.origin}/#/shared-resume/${uniqueId}`;
+     navigator.clipboard.writeText(shareUrl);
+     alert(`Public sharing link created and copied to clipboard!\n\nLink: ${shareUrl}\n\n(Note: In this demo version, this link simulates the action.)`);
+  };
+
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-emerald-500 border-emerald-500';
     if (score >= 50) return 'text-amber-500 border-amber-500';
@@ -167,6 +183,11 @@ const Resume: React.FC = () => {
             >
               {loading ? <><Loader2 className="animate-spin mr-2" size={20} /> AI Analyzing...</> : 'Analyze Resume'}
             </button>
+
+            <Link to="/jobs" className="w-full bg-slate-800 hover:bg-slate-700 text-indigo-300 py-3 rounded-xl font-medium transition flex items-center justify-center border border-slate-700">
+               <Sparkles size={16} className="mr-2" /> 
+               Already have a resume? Use Auto-Apply Agent
+            </Link>
           </div>
 
           {/* Results Section */}
@@ -282,15 +303,26 @@ const Resume: React.FC = () => {
                     <div className="prose max-w-none pb-16">
                         <pre className="whitespace-pre-wrap font-sans text-sm">{generatedResume}</pre>
                         
-                        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex flex-col items-center">
-                            <div className="text-xs text-slate-500 mb-2 bg-slate-100 px-3 py-1 rounded-full shadow-sm">
-                                You can edit this file after downloading
-                            </div>
+                        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-3 w-full justify-center">
                             <button 
                                 onClick={handleDownload}
-                                className="bg-slate-900 text-white px-6 py-3 rounded-full flex items-center hover:bg-slate-800 shadow-xl transition transform hover:scale-105"
+                                className="bg-slate-900 text-white px-5 py-3 rounded-full flex items-center hover:bg-slate-800 shadow-xl transition transform hover:scale-105 text-sm"
                             >
-                                <Download size={18} className="mr-2"/> Download Editable File
+                                <Download size={16} className="mr-2"/> Download File
+                            </button>
+                            
+                            <button 
+                                onClick={handleCopyToClipboard}
+                                className="bg-indigo-600 text-white px-5 py-3 rounded-full flex items-center hover:bg-indigo-700 shadow-xl transition transform hover:scale-105 text-sm"
+                            >
+                                <Copy size={16} className="mr-2"/> Copy Text
+                            </button>
+
+                            <button 
+                                onClick={handleShareResume}
+                                className="bg-emerald-600 text-white px-5 py-3 rounded-full flex items-center hover:bg-emerald-700 shadow-xl transition transform hover:scale-105 text-sm"
+                            >
+                                <Share2 size={16} className="mr-2"/> Share Link
                             </button>
                         </div>
                     </div>

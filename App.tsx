@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { HashRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
+import Footer from './components/Footer';
 import Dashboard from './pages/Dashboard';
 import Roadmap from './pages/Roadmap';
 import Resume from './pages/Resume';
@@ -118,6 +118,8 @@ const AppContent: React.FC = () => {
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          
+          <Footer />
         </main>
       </div>
     </div>

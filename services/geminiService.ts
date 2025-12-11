@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { RoadmapData, ResumeAnalysis, InterviewFeedback, InsightsResponse, UserProfile } from "../types";
 
@@ -152,7 +153,11 @@ export const generateJobApplication = async (profile: UserProfile, jobRole: stri
     return JSON.parse(response.text) as { coverLetter: string, tailoredSummary: string };
   } catch (e) {
     console.error("Job application generation failed", e);
-    return null;
+    // Return a fallback structure instead of null so the UI doesn't break
+    return {
+        coverLetter: "We encountered an error generating the cover letter. Please try again later or check your API key.",
+        tailoredSummary: "Could not generate summary."
+    };
   }
 };
 
