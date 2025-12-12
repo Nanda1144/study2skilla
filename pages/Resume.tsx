@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { analyzeResume, generateResumeContent } from '../services/geminiService';
-import { ResumeAnalysis, UserProfile } from '../types';
-import { getCurrentUser } from '../services/storage';
-import { FileText, Loader2, Check, AlertTriangle, TrendingUp, Upload, PenTool, Download, Sparkles, Copy, Share2 } from 'lucide-react';
+import { ResumeAnalysis, UserProfile, ResumeVersion } from '../types';
+import { getCurrentUser, saveResumeVersion, getResumeVersions, deleteResumeVersion } from '../services/storage';
+import { FileText, Loader2, Check, AlertTriangle, TrendingUp, Upload, PenTool, Download, Sparkles, Copy, Share2, History, Trash2, Save } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Resume: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'analyze' | 'build'>('analyze');
-  const currentUser = getCurrentUser();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   
   // Analyze State
   const [file, setFile] = useState<File | null>(null);
@@ -18,24 +19,22 @@ const Resume: React.FC = () => {
   // Builder State
   const [generatedResume, setGeneratedResume] = useState('');
   const [building, setBuilding] = useState(false);
+  const [versions, setVersions] = useState<ResumeVersion[]>([]);
 
-  // Fallback profile if user hasn't filled details fully (for demo)
-  const [profile] = useState<UserProfile>(currentUser || {
-    name: "Alex Johnson",
-    university: "State Tech University",
-    year: "3rd Year",
-    domain: "Full Stack Development",
-    skills: ["React", "Node.js", "MongoDB", "Tailwind CSS"],
-    bio: "Passionate developer looking for internships.",
-    email: "alex@example.com",
-    gamification: {
-      xp: 0,
-      level: 1,
-      badges: [],
-      streakDays: 0,
-      studyHoursTotal: 0
-    }
-  });
+  useEffect(() => {
+    const init = async () => {
+      // Load user
+      const user = await getCurrentUser();
+      if (user) {
+         setProfile(user);
+      }
+      
+      // Load versions
+      const storedVersions = await getResumeVersions();
+      setVersions(storedVersions);
+    };
+    init();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -73,6 +72,7 @@ const Resume: React.FC = () => {
   };
 
   const handleBuild = async () => {
+    if (!profile) return;
     setBuilding(true);
     const content = await generateResumeContent(profile);
     setGeneratedResume(content);
@@ -80,7 +80,7 @@ const Resume: React.FC = () => {
   };
 
   const handleDownload = () => {
-    if (!generatedResume) return;
+    if (!generatedResume || !profile) return;
     
     // Create a Blob containing the text
     const element = document.createElement("a");
@@ -103,11 +103,41 @@ const Resume: React.FC = () => {
 
   const handleShareResume = () => {
      if (!generatedResume) return;
-     // Simulate unique link generation
      const uniqueId = Math.random().toString(36).substring(7);
      const shareUrl = `${window.location.origin}/#/shared-resume/${uniqueId}`;
      navigator.clipboard.writeText(shareUrl);
      alert(`Public sharing link created and copied to clipboard!\n\nLink: ${shareUrl}\n\n(Note: In this demo version, this link simulates the action.)`);
+  };
+
+  const handleSaveVersion = async () => {
+    if (!generatedResume) return;
+    const defaultName = `Resume - ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+    const name = prompt("Name this version:", defaultName);
+    
+    if (name) {
+      const newVersion: ResumeVersion = {
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+        name,
+        content: generatedResume
+      };
+      const updatedVersions = await saveResumeVersion(newVersion);
+      setVersions(updatedVersions);
+    }
+  };
+
+  const handleLoadVersion = (version: ResumeVersion) => {
+    if (window.confirm(`Load version "${version.name}"? This will replace your current editor content.`)) {
+      setGeneratedResume(version.content);
+    }
+  };
+
+  const handleDeleteVersion = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm("Are you sure you want to delete this saved version?")) {
+      const updated = await deleteResumeVersion(id);
+      setVersions(updated);
+    }
   };
 
   const getScoreColor = (score: number) => {
@@ -115,6 +145,8 @@ const Resume: React.FC = () => {
     if (score >= 50) return 'text-amber-500 border-amber-500';
     return 'text-rose-500 border-rose-500';
   };
+
+  if (!profile) return <div className="p-8 text-center">Loading profile...</div>;
 
   return (
     <div className="max-w-6xl mx-auto h-[calc(100vh-8rem)] flex flex-col">
@@ -267,7 +299,7 @@ const Resume: React.FC = () => {
 
       {activeTab === 'build' && (
           <div className="flex-1 flex flex-col md:flex-row gap-6 overflow-hidden">
-             <div className="w-full md:w-1/3 space-y-4 overflow-y-auto pr-2">
+             <div className="w-full md:w-1/3 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
                  <div className="bg-slate-900 p-6 rounded-xl border border-slate-800">
                     <h3 className="font-bold text-lg mb-4">Profile Data Source</h3>
                     <p className="text-sm text-slate-400 mb-4">AI uses your profile details to construct a tailored resume.</p>
@@ -296,33 +328,64 @@ const Resume: React.FC = () => {
                         Generate Resume
                     </button>
                  </div>
+
+                 <div className="bg-slate-900 p-6 rounded-xl border border-slate-800">
+                   <h3 className="font-bold text-lg mb-4 flex items-center">
+                     <History size={18} className="mr-2 text-indigo-400"/> Version History
+                   </h3>
+                   <div className="space-y-3">
+                     {versions.length === 0 && <p className="text-slate-500 text-sm">No saved versions yet.</p>}
+                     {versions.map(version => (
+                       <div key={version.id} className="p-3 bg-slate-950 rounded-lg border border-slate-800 flex justify-between items-center group">
+                         <div className="min-w-0 flex-1 cursor-pointer" onClick={() => handleLoadVersion(version)}>
+                            <p className="text-sm font-medium text-white truncate hover:text-indigo-400 transition">{version.name}</p>
+                            <p className="text-xs text-slate-500">{new Date(version.timestamp).toLocaleDateString()}</p>
+                         </div>
+                         <button 
+                           onClick={(e) => handleDeleteVersion(version.id, e)}
+                           className="ml-2 text-slate-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition p-1"
+                           title="Delete Version"
+                         >
+                           <Trash2 size={14} />
+                         </button>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
              </div>
              
-             <div className="flex-1 bg-white text-slate-900 rounded-xl p-8 overflow-y-auto shadow-xl font-serif relative">
+             <div className="flex-1 bg-white text-slate-900 rounded-xl p-8 overflow-y-auto shadow-xl font-serif relative group">
                 {generatedResume ? (
                     <div className="prose max-w-none pb-16">
                         <pre className="whitespace-pre-wrap font-sans text-sm">{generatedResume}</pre>
                         
-                        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-3 w-full justify-center">
+                        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-3 w-full justify-center transition-opacity opacity-0 group-hover:opacity-100">
                             <button 
                                 onClick={handleDownload}
-                                className="bg-slate-900 text-white px-5 py-3 rounded-full flex items-center hover:bg-slate-800 shadow-xl transition transform hover:scale-105 text-sm"
+                                className="bg-slate-900 text-white px-4 py-3 rounded-full flex items-center hover:bg-slate-800 shadow-xl transition transform hover:scale-105 text-sm"
                             >
-                                <Download size={16} className="mr-2"/> Download File
+                                <Download size={16} className="mr-2"/> Download
                             </button>
                             
                             <button 
-                                onClick={handleCopyToClipboard}
-                                className="bg-indigo-600 text-white px-5 py-3 rounded-full flex items-center hover:bg-indigo-700 shadow-xl transition transform hover:scale-105 text-sm"
+                                onClick={handleSaveVersion}
+                                className="bg-indigo-600 text-white px-4 py-3 rounded-full flex items-center hover:bg-indigo-700 shadow-xl transition transform hover:scale-105 text-sm"
                             >
-                                <Copy size={16} className="mr-2"/> Copy Text
+                                <Save size={16} className="mr-2"/> Save Version
+                            </button>
+
+                            <button 
+                                onClick={handleCopyToClipboard}
+                                className="bg-slate-700 text-white px-4 py-3 rounded-full flex items-center hover:bg-slate-600 shadow-xl transition transform hover:scale-105 text-sm"
+                            >
+                                <Copy size={16} className="mr-2"/> Copy
                             </button>
 
                             <button 
                                 onClick={handleShareResume}
-                                className="bg-emerald-600 text-white px-5 py-3 rounded-full flex items-center hover:bg-emerald-700 shadow-xl transition transform hover:scale-105 text-sm"
+                                className="bg-emerald-600 text-white px-4 py-3 rounded-full flex items-center hover:bg-emerald-700 shadow-xl transition transform hover:scale-105 text-sm"
                             >
-                                <Share2 size={16} className="mr-2"/> Share Link
+                                <Share2 size={16} className="mr-2"/> Share
                             </button>
                         </div>
                     </div>

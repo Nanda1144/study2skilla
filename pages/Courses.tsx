@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Course, RoadmapData } from '../types';
 import { PlayCircle, Award, ExternalLink, Youtube, MonitorPlay, BookOpen, Map, X, PlusCircle, CheckCircle, CheckSquare, Square } from 'lucide-react';
@@ -17,11 +18,14 @@ const Courses: React.FC = () => {
   const [selectedSemester, setSelectedSemester] = useState<number>(1);
 
   useEffect(() => {
-     const savedRoadmap = getUserData('roadmap');
-     if (savedRoadmap) setRoadmap(savedRoadmap);
+     const init = async () => {
+         const savedRoadmap = await getUserData('roadmap');
+         if (savedRoadmap) setRoadmap(savedRoadmap);
 
-     const savedCompleted = getUserData('completed_courses');
-     if (savedCompleted) setCompletedCourses(savedCompleted);
+         const savedCompleted = await getUserData('completed_courses');
+         if (savedCompleted) setCompletedCourses(savedCompleted);
+     };
+     init();
   }, []);
   
   // Mock data - in real app would come from AI or DB based on domain
@@ -128,7 +132,7 @@ const Courses: React.FC = () => {
     window.open(course.url, '_blank');
   };
 
-  const toggleCompletion = (e: React.MouseEvent, courseId: string) => {
+  const toggleCompletion = async (e: React.MouseEvent, courseId: string) => {
     e.stopPropagation();
     let newCompleted;
     if (completedCourses.includes(courseId)) {
@@ -137,7 +141,7 @@ const Courses: React.FC = () => {
         newCompleted = [...completedCourses, courseId];
     }
     setCompletedCourses(newCompleted);
-    saveUserData('completed_courses', newCompleted);
+    await saveUserData('completed_courses', newCompleted);
   };
 
   const openAddModal = (e: React.MouseEvent, course: Course) => {
@@ -152,7 +156,7 @@ const Courses: React.FC = () => {
       setShowAddModal(true);
   };
 
-  const confirmAddToRoadmap = () => {
+  const confirmAddToRoadmap = async () => {
       if (!roadmap || !roadmap.roadmap || !courseToAdd) return;
 
       const updatedRoadmap = { ...roadmap };
@@ -170,7 +174,7 @@ const Courses: React.FC = () => {
           }
           
           setRoadmap(updatedRoadmap);
-          saveUserData('roadmap', updatedRoadmap);
+          await saveUserData('roadmap', updatedRoadmap);
           setShowAddModal(false);
           setCourseToAdd(null);
           alert(`Added "${courseToAdd.title}" to Semester ${selectedSemester} resources.`);

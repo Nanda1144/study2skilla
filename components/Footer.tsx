@@ -1,51 +1,12 @@
-import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, ExternalLink, Sparkles } from 'lucide-react';
+
+import React from 'react';
+import { ExternalLink, Sparkles } from 'lucide-react';
 
 const Footer: React.FC = () => {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  const faqs = [
-    {
-      q: "How does the AI Roadmap generation work?",
-      a: "We utilize Google's advanced Gemini 3 Pro model to analyze current industry standards, university curriculums, and your specific domain choice to construct a personalized, semester-by-semester learning path."
-    },
-    {
-      q: "Is the Resume analysis automated?",
-      a: "Yes. Our Resume & AI Builder uses Gemini 2.5 Flash to parse your resume text or PDF, compare it against millions of job descriptions for your target role, and provide instant, actionable feedback."
-    },
-    {
-      q: "Are the courses listed free?",
-      a: "We curate a mix of high-quality Free (YouTube, OpenCourseWare) and Paid (Udemy, Coursera) resources. You can filter by 'Free' in the Courses tab to see only no-cost options."
-    }
-  ];
-
   return (
-    <footer className="mt-20 border-t border-slate-800 bg-slate-900/50 pt-16 pb-8">
+    <footer className="mt-20 border-t border-slate-800 bg-slate-900/50 pt-12 pb-8">
       <div className="max-w-6xl mx-auto px-6">
         
-        {/* Q&A Section */}
-        <div className="mb-16">
-          <h3 className="text-xl font-bold text-white mb-6 text-center">Frequently Asked Questions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-4 max-w-3xl mx-auto">
-            {faqs.map((faq, idx) => (
-              <div key={idx} className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
-                <button 
-                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="w-full flex justify-between items-center p-4 text-left hover:bg-slate-900 transition"
-                >
-                  <span className="font-medium text-slate-200">{faq.q}</span>
-                  {openFaq === idx ? <ChevronUp size={16} className="text-indigo-400"/> : <ChevronDown size={16} className="text-slate-500"/>}
-                </button>
-                {openFaq === idx && (
-                  <div className="p-4 pt-0 text-sm text-slate-400 leading-relaxed border-t border-slate-800/50 bg-slate-900/30">
-                    {faq.a}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 text-center md:text-left">
            {/* Brand */}
            <div className="space-y-4">

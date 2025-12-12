@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
-import { BookOpen, Target, Award, Clock, ArrowRight, Zap, Play } from 'lucide-react';
+import { BookOpen, Target, Award, Clock, ArrowRight } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { addXP } from '../services/storage';
+import FAQ from '../components/FAQ';
 
 const Dashboard: React.FC = () => {
   const { user, updateUser } = useAuth();
@@ -11,17 +12,24 @@ const Dashboard: React.FC = () => {
   
   if (!user) return null;
 
-  const handleLogStudy = () => {
+  const handleLogStudy = async () => {
     setLogging(true);
-    // Simulate API call
-    setTimeout(() => {
-        // Award 100 XP
-        const updatedUser = addXP(user, 100);
-        // Also update study hours
-        updatedUser.gamification.studyHoursTotal += 1;
-        updateUser(updatedUser);
-        setLogging(false);
-    }, 800);
+    try {
+      // Award 100 XP
+      const updatedUser = await addXP(user, 100);
+      // Update local context
+      updateUser({
+        ...updatedUser,
+        gamification: {
+          ...updatedUser.gamification,
+          studyHoursTotal: updatedUser.gamification.studyHoursTotal + 1
+        }
+      });
+    } catch (e) {
+      console.error("Failed to log study", e);
+    } finally {
+      setLogging(false);
+    }
   };
 
   return (
@@ -142,6 +150,9 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* FAQ Section specifically requested for Dashboard */}
+      <FAQ />
     </div>
   );
 };

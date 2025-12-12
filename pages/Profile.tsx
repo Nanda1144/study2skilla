@@ -4,6 +4,7 @@ import { UserProfile } from '../types';
 import { Award, BookOpen, Clock, Save, Check, Trophy, Lock, X, Camera, Wand2, Loader2, Upload } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { editProfileImage } from '../services/geminiService';
+import FAQ from '../components/FAQ';
 
 const Profile: React.FC = () => {
   const { user, updateUser } = useAuth();
@@ -33,13 +34,13 @@ const Profile: React.FC = () => {
     }
   }, [user]);
 
-  const handleSaveBio = () => {
+  const handleSaveBio = async () => {
     if (!user) return;
     setIsSaving(true);
     
     // Create new user object
     const updatedUser = { ...user, bio };
-    updateUser(updatedUser);
+    await updateUser(updatedUser);
     
     // Simulate slight delay for effect
     setTimeout(() => {
@@ -60,7 +61,7 @@ const Profile: React.FC = () => {
     setShowEditModal(true);
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     
@@ -72,7 +73,7 @@ const Profile: React.FC = () => {
       domain: editForm.domain
     };
 
-    updateUser(updatedUser);
+    await updateUser(updatedUser);
     setShowEditModal(false);
   };
 
@@ -107,9 +108,9 @@ const Profile: React.FC = () => {
       setIsGeneratingPhoto(false);
   };
 
-  const handleSavePhoto = () => {
+  const handleSavePhoto = async () => {
       if (!user || !uploadedPhoto) return;
-      updateUser({ ...user, avatarUrl: uploadedPhoto });
+      await updateUser({ ...user, avatarUrl: uploadedPhoto });
       setShowPhotoModal(false);
       setUploadedPhoto(null);
       setPhotoPrompt('');
@@ -267,6 +268,9 @@ const Profile: React.FC = () => {
               </div>
           </div>
       </div>
+      
+      {/* FAQ Section specifically requested for Profile */}
+      <FAQ />
 
       {/* Edit Modal */}
       {showEditModal && (

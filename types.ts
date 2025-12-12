@@ -128,3 +128,10 @@ export interface AdminStats {
   growth: number;
   domainDistribution: { name: string; value: number }[];
 }
+
+export interface ResumeVersion {
+  id: string;
+  timestamp: string;
+  name: string;
+  content: string;
+}

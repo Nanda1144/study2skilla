@@ -9,17 +9,18 @@ const AdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
 
-  const refreshUsers = () => {
-    setUsers(getStoredUsers());
+  const refreshUsers = async () => {
+    const data = await getStoredUsers();
+    setUsers(data);
   };
 
   useEffect(() => {
     refreshUsers();
   }, []);
 
-  const handleToggleStatus = (email: string) => {
-    toggleUserStatus(email);
-    refreshUsers();
+  const handleToggleStatus = async (email: string) => {
+    await toggleUserStatus(email);
+    await refreshUsers();
   };
 
   const filteredUsers = users.filter(

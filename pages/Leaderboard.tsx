@@ -10,7 +10,11 @@ const Leaderboard: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<UserProfile[]>([]);
 
   useEffect(() => {
-    setLeaderboard(getLeaderboardData());
+    const fetchLeaderboard = async () => {
+        const data = await getLeaderboardData();
+        setLeaderboard(data);
+    };
+    fetchLeaderboard();
   }, []);
 
   const getRankIcon = (index: number) => {

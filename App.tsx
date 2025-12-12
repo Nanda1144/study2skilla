@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { HashRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
@@ -13,6 +14,7 @@ import Mentors from './pages/Mentors';
 import Jobs from './pages/Jobs';
 import Courses from './pages/Courses';
 import Auth from './pages/Auth';
+import Landing from './pages/Landing';
 import AdminDashboard from './pages/AdminDashboard';
 import Leaderboard from './pages/Leaderboard';
 import { Menu } from 'lucide-react';
@@ -32,7 +34,7 @@ const AppContent: React.FC = () => {
   if (!user) {
     return (
       <Routes>
-        <Route path="/" element={<Auth />} />
+        <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

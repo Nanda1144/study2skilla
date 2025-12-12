@@ -20,20 +20,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check local storage on mount
-    const storedUser = getCurrentUser();
-    if (storedUser) {
-      setUser(storedUser);
-    }
-    setLoading(false);
+    // Check storage on mount async
+    const initAuth = async () => {
+      try {
+        const storedUser = await getCurrentUser();
+        if (storedUser) {
+          setUser(storedUser);
+        }
+      } catch (e) {
+        console.error("Failed to restore session", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    initAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // Simulate network
-      await new Promise(r => setTimeout(r, 500));
-      const loggedInUser = loginUser(email, password);
+      const loggedInUser = await loginUser(email, password);
       setUser(loggedInUser);
     } finally {
       setLoading(false);
@@ -43,10 +49,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const register = async (profile: UserProfile, password: string) => {
     setLoading(true);
     try {
-      await new Promise(r => setTimeout(r, 500));
-      const newUser = registerUser(profile, password);
-      // Automatically login after register
-      localStorage.setItem('study2skills_session', JSON.stringify(newUser));
+      const newUser = await registerUser(profile, password);
+      // Automatically login after register (handled by service returning user and setting session)
       setUser(newUser);
     } finally {
       setLoading(false);
@@ -58,12 +62,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
   };
 
-  const updateUser = (profile: UserProfile) => {
-    updateUserProfile(profile);
+  const updateUser = async (profile: UserProfile) => {
+    // Optimistic update
     setUser(profile);
+    // Persist async
+    await updateUserProfile(profile);
   };
 
-  const loginGuest = () => {
+  const loginGuest = async () => {
      const guestUser: UserProfile = {
       id: 'guest_' + Date.now(),
       name: 'Guest User',
@@ -77,6 +83,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       status: 'active',
       gamification: { xp: 0, level: 1, badges: [], streakDays: 0, studyHoursTotal: 0 }
     };
+    // Manually set session for guest
     localStorage.setItem('study2skills_session', JSON.stringify(guestUser));
     setUser(guestUser);
   };

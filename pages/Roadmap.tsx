@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { generateRoadmap } from '../services/geminiService';
 import { RoadmapData } from '../types';
@@ -14,12 +15,15 @@ const Roadmap: React.FC = () => {
   const [data, setData] = useState<RoadmapData | null>(null);
 
   useEffect(() => {
-    // Load saved roadmap on mount
-    const saved = getUserData('roadmap');
-    if (saved) {
-      setData(saved);
-      if (saved.domain) setDomain(saved.domain);
-    }
+    // Load saved roadmap on mount async
+    const loadRoadmap = async () => {
+        const saved = await getUserData('roadmap');
+        if (saved) {
+            setData(saved);
+            if (saved.domain) setDomain(saved.domain);
+        }
+    };
+    loadRoadmap();
   }, []);
 
   const handleGenerate = async () => {
@@ -37,7 +41,7 @@ const Roadmap: React.FC = () => {
     const result = await generateRoadmap(domain);
     setData(result);
     if (result) {
-      saveUserData('roadmap', result);
+      await saveUserData('roadmap', result);
     }
     setLoading(false);
   };

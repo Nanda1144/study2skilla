@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Map, FileText, Mic, MessageSquare, TrendingUp, X, UserCircle, Briefcase, Users, BookOpen, LogOut, Trophy, LogIn, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Map, FileText, Mic, MessageSquare, TrendingUp, X, UserCircle, Briefcase, Users, BookOpen, LogOut, Trophy, LogIn, Sun, Moon, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
@@ -15,6 +15,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
   const { logout, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const isGuest = user?.role === 'guest';
+  const isAdmin = user?.role === 'admin';
 
   const handleLogout = () => {
     logout();
@@ -26,7 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
     navigate('/auth');
   }
 
-  const links = [
+  const studentLinks = [
     { to: '/', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
     { to: '/leaderboard', icon: <Trophy size={20} />, label: 'Leaderboard' },
     { to: '/profile', icon: <UserCircle size={20} />, label: 'My Profile' },
@@ -39,6 +40,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
     { to: '/insights', icon: <TrendingUp size={20} />, label: 'Market Insights' },
     { to: '/mentor', icon: <MessageSquare size={20} />, label: 'AI Assistant' },
   ];
+
+  const adminLinks = [
+    { to: '/admin', icon: <Shield size={20} />, label: 'Admin Dashboard' },
+  ];
+
+  const links = isAdmin ? adminLinks : studentLinks;
 
   // Calculate progress to next level
   const xpForCurrentLevel = (user?.gamification?.level || 1) ** 2 * 50;
@@ -89,8 +96,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
           ))}
         </nav>
 
-        {/* Gamification Status */}
-        {!isGuest && user && (
+        {/* Gamification Status - Only for Students */}
+        {!isGuest && !isAdmin && user && (
             <div className="px-6 py-4 bg-slate-950/50 border-t border-slate-800">
                 <div className="flex justify-between items-end mb-1">
                     <span className="text-xs font-bold text-slate-400">Level {user.gamification?.level || 1}</span>
@@ -114,8 +121,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
              </div>
         )}
 
+        {isAdmin && (
+             <div className="px-6 py-4 bg-slate-950/50 border-t border-slate-800">
+                 <p className="text-xs text-slate-500 mb-2 font-bold uppercase">Admin Mode</p>
+                 <p className="text-xs text-slate-600">Managing System</p>
+             </div>
+        )}
+
         <div className="p-4 border-t border-slate-800 bg-slate-900 space-y-2">
-          {/* Theme Toggle (Replaces Settings) */}
+          {/* Theme Toggle */}
           <button 
             onClick={toggleTheme}
             className="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white w-full transition-colors"

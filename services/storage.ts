@@ -1,23 +1,29 @@
 
-import { UserProfile, Badge, AdminStats } from '../types';
+import { UserProfile, Badge, AdminStats, ResumeVersion } from '../types';
 
 const USERS_KEY = 'study2skills_users';
 const CURRENT_USER_KEY = 'study2skills_session';
 
+// Helper to simulate network latency
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 // Helper to get all users from "DB"
-export const getStoredUsers = (): UserProfile[] => {
+export const getStoredUsers = async (): Promise<UserProfile[]> => {
+  await delay(200);
   const users = localStorage.getItem(USERS_KEY);
   return users ? JSON.parse(users) : [];
 };
 
 // Register a new user
-export const registerUser = (profile: UserProfile, password: string): UserProfile => {
-  const users = getStoredUsers();
+export const registerUser = async (profile: UserProfile, password: string): Promise<UserProfile> => {
+  await delay(500);
+  const users = await getStoredUsers();
   if (users.find(u => u.email === profile.email)) {
     throw new Error("User already exists");
   }
   
-  const role: 'student' | 'admin' = profile.email.includes('admin') ? 'admin' : 'student';
+  // Logic to automatically detect admin role based on email address
+  const role: 'student' | 'admin' = profile.email.toLowerCase().includes('admin@') ? 'admin' : 'student';
   
   // Initialize with Gamification defaults
   const newUser: UserProfile = { 
@@ -46,7 +52,8 @@ export const registerUser = (profile: UserProfile, password: string): UserProfil
 };
 
 // Login user
-export const loginUser = (email: string, password: string): UserProfile => {
+export const loginUser = async (email: string, password: string): Promise<UserProfile> => {
+  await delay(500);
   // Hardcoded Admin for Demo
   if (email === 'admin@study2skills.com' && password === 'admin123') {
     const adminUser: UserProfile = {
@@ -66,7 +73,7 @@ export const loginUser = (email: string, password: string): UserProfile => {
     return adminUser;
   }
 
-  const users = getStoredUsers();
+  const users = await getStoredUsers();
   const user = users.find(u => u.email === email);
   
   if (!user) {
@@ -77,24 +84,38 @@ export const loginUser = (email: string, password: string): UserProfile => {
     throw new Error("Account has been disabled by administrator.");
   }
   
+  // Enforce admin role detection on login as well, in case manual edits or logic changes happened
+  if (user.email.toLowerCase().includes('admin@') && user.role !== 'admin') {
+      user.role = 'admin';
+      // Persist the correction
+      const userIndex = users.findIndex(u => u.email === email);
+      if (userIndex !== -1) {
+          users[userIndex] = user;
+          localStorage.setItem(USERS_KEY, JSON.stringify(users));
+      }
+  }
+  
   localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
   return user;
 };
 
 // Logout
-export const logoutUser = () => {
+export const logoutUser = async (): Promise<void> => {
+  await delay(100);
   localStorage.removeItem(CURRENT_USER_KEY);
 };
 
 // Get current session
-export const getCurrentUser = (): UserProfile | null => {
+export const getCurrentUser = async (): Promise<UserProfile | null> => {
+  await delay(100);
   const session = localStorage.getItem(CURRENT_USER_KEY);
   return session ? JSON.parse(session) : null;
 };
 
 // Update user profile
-export const updateUserProfile = (updatedProfile: UserProfile): void => {
-  const users = getStoredUsers();
+export const updateUserProfile = async (updatedProfile: UserProfile): Promise<UserProfile> => {
+  await delay(300);
+  const users = await getStoredUsers();
   const index = users.findIndex(u => u.email === updatedProfile.email);
 
   if (index !== -1) {
@@ -104,11 +125,13 @@ export const updateUserProfile = (updatedProfile: UserProfile): void => {
 
   // Update current session
   localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedProfile));
+  return updatedProfile;
 };
 
 // Admin: Toggle User Status
-export const toggleUserStatus = (email: string) => {
-  const users = getStoredUsers();
+export const toggleUserStatus = async (email: string): Promise<void> => {
+  await delay(200);
+  const users = await getStoredUsers();
   const user = users.find(u => u.email === email);
   if (user) {
     user.status = user.status === 'active' ? 'disabled' : 'active';
@@ -117,8 +140,9 @@ export const toggleUserStatus = (email: string) => {
 };
 
 // Admin: Get Stats
-export const getAdminStats = (): AdminStats => {
-  const users = getStoredUsers();
+export const getAdminStats = async (): Promise<AdminStats> => {
+  await delay(200);
+  const users = await getStoredUsers();
   const activeUsers = users.filter(u => u.status !== 'disabled').length;
   
   // Aggregate domains
@@ -137,8 +161,9 @@ export const getAdminStats = (): AdminStats => {
 };
 
 // Gamification: Get Leaderboard
-export const getLeaderboardData = (): UserProfile[] => {
-  let users = getStoredUsers();
+export const getLeaderboardData = async (): Promise<UserProfile[]> => {
+  await delay(300);
+  let users = await getStoredUsers();
   
   // Mock data if strictly local empty db
   if (users.length < 5) {
@@ -156,7 +181,7 @@ export const getLeaderboardData = (): UserProfile[] => {
 };
 
 // Gamification: Add XP Helper
-export const addXP = (user: UserProfile, amount: number): UserProfile => {
+export const addXP = async (user: UserProfile, amount: number): Promise<UserProfile> => {
   const newXP = user.gamification.xp + amount;
   // Simple Level Formula: Level = sqrt(XP / 100)
   const newLevel = Math.floor(Math.sqrt(newXP / 50)) + 1;
@@ -170,21 +195,56 @@ export const addXP = (user: UserProfile, amount: number): UserProfile => {
       }
   };
   
-  updateUserProfile(updatedUser);
+  await updateUserProfile(updatedUser);
   return updatedUser;
 };
 
 // Save user specific data (Roadmap, etc)
-export const saveUserData = (key: string, data: any) => {
-  const user = getCurrentUser();
+export const saveUserData = async (key: string, data: any): Promise<void> => {
+  await delay(100);
+  const user = await getCurrentUser();
   if (!user || !user.id) return;
   localStorage.setItem(`data_${user.id}_${key}`, JSON.stringify(data));
 };
 
 // Get user specific data
-export const getUserData = (key: string) => {
-  const user = getCurrentUser();
+export const getUserData = async (key: string): Promise<any> => {
+  await delay(100);
+  const user = await getCurrentUser();
   if (!user || !user.id) return null;
   const data = localStorage.getItem(`data_${user.id}_${key}`);
   return data ? JSON.parse(data) : null;
+};
+
+// --- Resume Versioning ---
+
+export const saveResumeVersion = async (version: ResumeVersion): Promise<ResumeVersion[]> => {
+  await delay(200);
+  const user = await getCurrentUser();
+  if (!user) return [];
+  const key = `data_${user.id}_resume_versions`;
+  const current = await getResumeVersions();
+  const updated = [version, ...current]; // Newest first
+  localStorage.setItem(key, JSON.stringify(updated));
+  return updated;
+};
+
+export const getResumeVersions = async (): Promise<ResumeVersion[]> => {
+  await delay(100);
+  const user = await getCurrentUser();
+  if (!user) return [];
+  const key = `data_${user.id}_resume_versions`;
+  const data = localStorage.getItem(key);
+  return data ? JSON.parse(data) : [];
+};
+
+export const deleteResumeVersion = async (id: string): Promise<ResumeVersion[]> => {
+  await delay(200);
+  const versions = await getResumeVersions();
+  const updated = versions.filter(v => v.id !== id);
+  const user = await getCurrentUser();
+  if (!user) return updated;
+   const key = `data_${user.id}_resume_versions`;
+  localStorage.setItem(key, JSON.stringify(updated));
+  return updated;
 };
